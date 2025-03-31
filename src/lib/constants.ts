@@ -1,3 +1,3 @@
-export const PROJECT_ID = 'farcaster-frames-template';
-export const PROJECT_TITLE = "Farcaster Frames Template";
-export const PROJECT_DESCRIPTION = "A Farcaster Frames v2 Template by hellno";
+export const PROJECT_ID = 'spotify-now-playing';
+export const PROJECT_TITLE = "Spotify Now Playing";
+export const PROJECT_DESCRIPTION = "See what you're currently listening to on Spotify";
