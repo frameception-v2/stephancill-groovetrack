@@ -112,8 +112,13 @@ export default function Frame() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
-  // Define fetchNowPlaying function
+  // Define fetchNowPlaying function first, before using it in any hooks
   const fetchNowPlaying = useCallback(async () => {
+    // Only run in browser environment
+    if (typeof window === 'undefined') {
+      return;
+    }
+    
     setIsLoading(true);
     try {
       const token = localStorage.getItem('spotify_access_token');
@@ -128,6 +133,9 @@ export default function Frame() {
         headers: {
           'Authorization': `Bearer ${token}`
         }
+      }).catch(error => {
+        console.error('Error fetching currently playing:', error);
+        return { ok: false, status: 500 } as Response;
       });
 
       if (response.status === 204) {
@@ -136,19 +144,30 @@ export default function Frame() {
           headers: {
             'Authorization': `Bearer ${token}`
           }
+        }).catch(error => {
+          console.error('Error fetching recently played:', error);
+          return { ok: false, status: 500 } as Response;
         });
         
-        if (recentlyPlayed.ok) {
-          const data = await recentlyPlayed.json();
-          if (data.items && data.items.length > 0) {
-            setCurrentTrack(data.items[0].track);
-            setIsPlaying(false);
+        if (recentlyPlayed.ok && 'json' in recentlyPlayed) {
+          try {
+            const data = await recentlyPlayed.json();
+            if (data.items && data.items.length > 0) {
+              setCurrentTrack(data.items[0].track);
+              setIsPlaying(false);
+            }
+          } catch (error) {
+            console.error('Error parsing recently played JSON:', error);
           }
         }
-      } else if (response.ok) {
-        const data: SpotifyCurrentlyPlaying = await response.json();
-        setCurrentTrack(data.item);
-        setIsPlaying(data.is_playing);
+      } else if (response.ok && 'json' in response) {
+        try {
+          const data: SpotifyCurrentlyPlaying = await response.json();
+          setCurrentTrack(data.item);
+          setIsPlaying(data.is_playing);
+        } catch (error) {
+          console.error('Error parsing currently playing JSON:', error);
+        }
       } else if (response.status === 401) {
         // Token expired
         localStorage.removeItem('spotify_access_token');
@@ -163,10 +182,13 @@ export default function Frame() {
 
   // Check if user is authenticated with Spotify
   useEffect(() => {
-    const spotifyToken = localStorage.getItem('spotify_access_token');
-    if (spotifyToken) {
-      setIsAuthenticated(true);
-      fetchNowPlaying();
+    // Only run in browser environment
+    if (typeof window !== 'undefined') {
+      const spotifyToken = localStorage.getItem('spotify_access_token');
+      if (spotifyToken) {
+        setIsAuthenticated(true);
+        fetchNowPlaying();
+      }
     }
   }, [fetchNowPlaying]);
 
@@ -179,15 +201,18 @@ export default function Frame() {
 
   // Handle Spotify auth callback
   useEffect(() => {
-    const hash = window.location.hash;
-    if (hash) {
-      const params = new URLSearchParams(hash.substring(1));
-      const token = params.get('access_token');
-      if (token) {
-        localStorage.setItem('spotify_access_token', token);
-        setIsAuthenticated(true);
-        window.location.hash = '';
-        fetchNowPlaying();
+    // Only run in browser environment
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash;
+      if (hash) {
+        const params = new URLSearchParams(hash.substring(1));
+        const token = params.get('access_token');
+        if (token) {
+          localStorage.setItem('spotify_access_token', token);
+          setIsAuthenticated(true);
+          window.location.hash = '';
+          fetchNowPlaying();
+        }
       }
     }
   }, [fetchNowPlaying]);
