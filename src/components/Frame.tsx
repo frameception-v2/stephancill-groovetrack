@@ -112,24 +112,7 @@ export default function Frame() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
-  // Define fetchNowPlaying before using it in useEffect
-
-  // Check if user is authenticated with Spotify
-  useEffect(() => {
-    const spotifyToken = localStorage.getItem('spotify_access_token');
-    if (spotifyToken) {
-      setIsAuthenticated(true);
-      fetchNowPlaying();
-    }
-  }, [fetchNowPlaying]);
-
-  // Signal to the Farcaster client that the frame is ready
-  useEffect(() => {
-    if (sdk && isSDKLoaded) {
-      sdk.actions.ready();
-    }
-  }, [sdk, isSDKLoaded]);
-
+  // Define fetchNowPlaying function
   const fetchNowPlaying = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -177,6 +160,22 @@ export default function Frame() {
       setIsLoading(false);
     }
   }, []);
+
+  // Check if user is authenticated with Spotify
+  useEffect(() => {
+    const spotifyToken = localStorage.getItem('spotify_access_token');
+    if (spotifyToken) {
+      setIsAuthenticated(true);
+      fetchNowPlaying();
+    }
+  }, [fetchNowPlaying]);
+
+  // Signal to the Farcaster client that the frame is ready
+  useEffect(() => {
+    if (sdk && isSDKLoaded) {
+      sdk.actions.ready();
+    }
+  }, [sdk, isSDKLoaded]);
 
   // Handle Spotify auth callback
   useEffect(() => {
